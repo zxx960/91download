@@ -1,0 +1,38 @@
+# 依赖目录
+node_modules/
+
+# 环境变量文件
+.env
+
+# 日志文件
+*.log
+
+# 编辑器/IDE文件
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
+
+# 构建产物
+dist/
+build/
+
+# 缓存文件
+.cache/
+
+# 临时文件
+*.tmp
+*.temp
+
+# 包锁文件
+package-lock.json
+
+# 调试文件
+*.debug
+
+# 操作系统文件
+Thumbs.db
+
+# Puppeteer缓存
+.local-chromium/

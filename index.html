@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>视频链接提取器</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            background-color: #fff;
+            min-height: 100px;
+        }
+        .download-link {
+            display: block;
+            margin: 5px 0;
+            color: #2196F3;
+            text-decoration: none;
+        }
+        .download-link:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>视频链接提取器</h1>
+        <p>请将网页源代码粘贴到下面的文本框中：</p>
+        <textarea id="sourceCode" placeholder="在此粘贴网页源代码..."></textarea>
+        <button onclick="extractLinks()">提取链接</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function extractLinks() {
+            const sourceCode = document.getElementById('sourceCode').value;
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '';
+
+            // 使用正则表达式匹配m3u8链接
+            const m3u8Pattern = /https?:\/\/[^\s<>"']+?\.m3u8[^\s<>"']*/g;
+            const matches = sourceCode.match(m3u8Pattern);
+
+            if (matches && matches.length > 0) {
+                const uniqueLinks = [...new Set(matches)]; // 去重
+                uniqueLinks.forEach((link, index) => {
+                    const linkElement = document.createElement('a');
+                    linkElement.href = link;
+                    linkElement.className = 'download-link';
+                    linkElement.target = '_blank';
+                    linkElement.textContent = `下载链接 ${index + 1}: ${link}`;
+                    resultDiv.appendChild(linkElement);
+                });
+            } else {
+                resultDiv.textContent = '未找到任何m3u8链接';
+            }
+        }
+    </script>
+</body>
+</html>
