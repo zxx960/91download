@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { getVideoUrl } = require('./videoExtractor');
 
 // 创建Express应用
@@ -22,19 +23,11 @@ const config = {
 // 中间件
 app.use(express.json());
 app.use(cors()); // 启用CORS支持跨域请求
+app.use('/', express.static(__dirname)); // 提供静态文件服务
 
 // 首页路由
 app.get('/', (req, res) => {
-    res.json({
-        status: 'success',
-        message: '视频链接提取API服务已启动',
-        usage: {
-            endpoint: '/api/extract',
-            method: 'POST',
-            body: { url: '视频页面URL' },
-            example: 'curl -X POST -H "Content-Type: application/json" -d "{\"url\":\"https://www.91porn.com/view_video.php?viewkey=1566226242\"}" http://localhost:3000/api/extract'
-        }
-    });
+    res.sendFile(path.join(__dirname, 'index.html'));
 });
 
 // 视频链接提取API

@@ -5,90 +5,186 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>视频链接提取器</title>
     <style>
+        :root {
+            --primary-color: #ff4d4d;
+            --secondary-color: #333;
+            --text-color: #fff;
+            --bg-color: #1a1a1a;
+            --input-bg: #2d2d2d;
+            --border-color: #404040;
+        }
+
         body {
             font-family: Arial, sans-serif;
             max-width: 800px;
             margin: 20px auto;
             padding: 0 20px;
-            background-color: #f5f5f5;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
+
         .container {
-            background-color: white;
-            padding: 20px;
+            background-color: var(--secondary-color);
+            padding: 30px;
             border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
         }
+
+        h1 {
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+        }
+
         textarea {
             width: 100%;
-            height: 200px;
+            height: 100px;
             margin: 10px 0;
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 15px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
             resize: vertical;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 16px;
         }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+        }
+
         button {
-            background-color: #4CAF50;
+            background-color: var(--primary-color);
             color: white;
-            padding: 10px 20px;
+            padding: 12px 30px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             font-size: 16px;
+            font-weight: bold;
+            width: 100%;
+            margin: 20px 0;
+            transition: background-color 0.3s;
         }
+
         button:hover {
-            background-color: #45a049;
+            background-color: #ff3333;
         }
+
         #result {
             margin-top: 20px;
-            padding: 10px;
-            border: 1px solid #ddd;
+            padding: 15px;
+            border: 1px solid var(--border-color);
             border-radius: 4px;
-            background-color: #fff;
+            background-color: var(--input-bg);
             min-height: 100px;
         }
+
         .download-link {
             display: block;
-            margin: 5px 0;
-            color: #2196F3;
+            margin: 10px 0;
+            color: var(--primary-color);
             text-decoration: none;
+            word-break: break-all;
+            padding: 10px;
+            background-color: rgba(255, 77, 77, 0.1);
+            border-radius: 4px;
+            transition: background-color 0.3s;
         }
+
         .download-link:hover {
-            text-decoration: underline;
+            background-color: rgba(255, 77, 77, 0.2);
+        }
+
+        .loading {
+            display: none;
+            margin: 10px 0;
+            color: var(--primary-color);
+            text-align: center;
+            font-size: 16px;
+        }
+
+        .error {
+            color: var(--primary-color);
+            margin: 10px 0;
+            padding: 10px;
+            background-color: rgba(255, 77, 77, 0.1);
+            border-radius: 4px;
+        }
+
+        .description {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #999;
+        }
+
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: #666;
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>视频链接提取器</h1>
-        <p>请将网页源代码粘贴到下面的文本框中：</p>
-        <textarea id="sourceCode" placeholder="在此粘贴网页源代码..."></textarea>
-        <button onclick="extractLinks()">提取链接</button>
+        <p class="description">输入视频页面URL，一键获取下载链接</p>
+        <textarea id="videoUrl" placeholder="在此输入视频页面URL..."></textarea>
+        <button onclick="extractVideo()">提取链接</button>
+        <div id="loading" class="loading">正在处理中...</div>
+        <div id="error" class="error"></div>
         <div id="result"></div>
+        <div class="footer">
+            © 2024 视频链接提取器 - 简单、快速、高效
+        </div>
     </div>
 
     <script>
-        function extractLinks() {
-            const sourceCode = document.getElementById('sourceCode').value;
+        async function extractVideo() {
+            const videoUrl = document.getElementById('videoUrl').value;
             const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            const errorDiv = document.getElementById('error');
+            
+            // 清空之前的结果
             resultDiv.innerHTML = '';
+            errorDiv.textContent = '';
+            
+            if (!videoUrl) {
+                errorDiv.textContent = '请输入视频页面URL';
+                return;
+            }
 
-            // 使用正则表达式匹配m3u8链接
-            const m3u8Pattern = /https?:\/\/[^\s<>"']+?\.m3u8[^\s<>"']*/g;
-            const matches = sourceCode.match(m3u8Pattern);
+            try {
+                loadingDiv.style.display = 'block';
+                
+                const response = await fetch('/api/extract', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ url: videoUrl })
+                });
 
-            if (matches && matches.length > 0) {
-                const uniqueLinks = [...new Set(matches)]; // 去重
-                uniqueLinks.forEach((link, index) => {
+                const data = await response.json();
+
+                if (data.status === 'success') {
                     const linkElement = document.createElement('a');
-                    linkElement.href = link;
+                    linkElement.href = data.data.videoUrl;
                     linkElement.className = 'download-link';
                     linkElement.target = '_blank';
-                    linkElement.textContent = `下载链接 ${index + 1}: ${link}`;
+                    linkElement.textContent = `视频下载链接: ${data.data.videoUrl}`;
                     resultDiv.appendChild(linkElement);
-                });
-            } else {
-                resultDiv.textContent = '未找到任何m3u8链接';
+                } else {
+                    errorDiv.textContent = data.message || '提取失败';
+                }
+            } catch (error) {
+                errorDiv.textContent = '发生错误：' + error.message;
+            } finally {
+                loadingDiv.style.display = 'none';
             }
         }
     </script>
