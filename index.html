@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>视频链接提取器</title>
+    <title>91视频下载器 - 永久免费在线视频下载工具</title>
+    <meta name="description" content="91视频下载器是一款永久免费的在线视频下载工具，支持实时更新，一键提取视频下载链接，简单快速，无需注册，无需安装。">
+    <meta name="keywords" content="91视频下载,视频下载器,在线视频下载,免费视频下载,视频提取工具">
+    <meta name="author" content="91视频下载器">
+    <meta property="og:title" content="91视频下载器 - 永久免费在线视频下载工具">
+    <meta property="og:description" content="永久免费的视频下载工具，支持实时更新，一键提取视频下载链接。">
+    <meta property="og:type" content="website">
     <style>
         :root {
             --primary-color: #ff4d4d;
@@ -28,6 +34,7 @@
             padding: 30px;
             border-radius: 8px;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            box-sizing: border-box;
         }
 
         h1 {
@@ -48,6 +55,7 @@
             background-color: var(--input-bg);
             color: var(--text-color);
             font-size: 16px;
+            box-sizing: border-box;
         }
 
         textarea:focus {
@@ -112,6 +120,7 @@
             padding: 10px;
             background-color: rgba(255, 77, 77, 0.1);
             border-radius: 4px;
+            display: none;
         }
 
         .description {
@@ -130,15 +139,15 @@
 </head>
 <body>
     <div class="container">
-        <h1>视频链接提取器</h1>
-        <p class="description">输入视频页面URL，一键获取下载链接</p>
+        <h1>91视频下载器</h1>
+        <p class="description">永久免费 · 实时更新 · 一键下载</p>
         <textarea id="videoUrl" placeholder="在此输入视频页面URL..."></textarea>
         <button onclick="extractVideo()">提取链接</button>
         <div id="loading" class="loading">正在处理中...</div>
         <div id="error" class="error"></div>
         <div id="result"></div>
         <div class="footer">
-            © 2024 视频链接提取器 - 简单、快速、高效
+            © 2024 91视频下载器 - 永久免费 · 实时更新 · 简单高效
         </div>
     </div>
 
@@ -151,10 +160,12 @@
             
             // 清空之前的结果
             resultDiv.innerHTML = '';
+            errorDiv.style.display = 'none';
             errorDiv.textContent = '';
             
             if (!videoUrl) {
                 errorDiv.textContent = '请输入视频页面URL';
+                errorDiv.style.display = 'block';
                 return;
             }
 
@@ -180,9 +191,11 @@
                     resultDiv.appendChild(linkElement);
                 } else {
                     errorDiv.textContent = data.message || '提取失败';
+                    errorDiv.style.display = 'block';
                 }
             } catch (error) {
                 errorDiv.textContent = '发生错误：' + error.message;
+                errorDiv.style.display = 'block';
             } finally {
                 loadingDiv.style.display = 'none';
             }
