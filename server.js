@@ -1,5 +1,5 @@
 const puppeteer = require('puppeteer');
-const tools = require('./tools'); // 假设你已经有了一个名为 tools.js 的文件
+const { strencode2 } = require('./m2_node');
 const videoUrl = 'https://www.91porn.com/view_video.php?viewkey=1566226242';
 
 (async () => {
@@ -38,7 +38,7 @@ const videoUrl = 'https://www.91porn.com/view_video.php?viewkey=1566226242';
 
     // 获取页面源码
     const pageContent = await page.content();
-    var jm = tools.strencode2(pageContent.split("document.write(strencode2(\"")[1].split("\"")[0]);
+    var jm = strencode2(pageContent.split("document.write(strencode2(\"")[1].split("\"")[0]);
     console.log(pageContent.split("document.write(strencode2(\"")[1].split("\"")[0]) 
     var videoSrc = jm.split("<source src='")[1].split("'")[0];
     if (videoSrc) {
