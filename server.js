@@ -1,10 +1,13 @@
-const axios = require('axios');
-const { strencode2 } = require('./m2_node');
+const express = require('express');
+const cors = require('cors');
+const { getVideoUrl } = require('./videoExtractor');
+
+// 创建Express应用
+const app = express();
+const PORT = process.env.PORT || 3000;
 
 // 可配置参数
 const config = {
-    // 默认视频URL，可以通过命令行参数覆盖
-    videoUrl: 'https://www.91porn.com/view_video.php?viewkey=1566226242',
     // 请求超时时间（毫秒）
     timeout: 30000,
     // 是否使用代理（如果需要）
@@ -16,112 +19,80 @@ const config = {
     }
 };
 
-// 从命令行参数获取视频URL（如果提供）
-if (process.argv.length > 2) {
-    config.videoUrl = process.argv[2];
-    console.log(`使用命令行提供的URL: ${config.videoUrl}`);
-}
+// 中间件
+app.use(express.json());
+app.use(cors()); // 启用CORS支持跨域请求
 
-// 创建一个超时设置的axios实例
-const axiosInstance = axios.create({
-    timeout: config.timeout,
-    maxRedirects: 5,
-    validateStatus: function (status) {
-        return status >= 200 && status < 300;
-    },
-    // 如果启用代理，添加代理配置
-    ...(config.useProxy && {
-        proxy: {
-            host: config.proxy.host,
-            port: config.proxy.port,
-            protocol: 'http'
+// 首页路由
+app.get('/', (req, res) => {
+    res.json({
+        status: 'success',
+        message: '视频链接提取API服务已启动',
+        usage: {
+            endpoint: '/api/extract',
+            method: 'POST',
+            body: { url: '视频页面URL' },
+            example: 'curl -X POST -H "Content-Type: application/json" -d "{\"url\":\"https://www.91porn.com/view_video.php?viewkey=1566226242\"}" http://localhost:3000/api/extract'
         }
-    })
+    });
 });
 
-
-
-
-
-// 从HTML内容中提取视频链接
-function extractVideoUrl(pageContent) {
-    if (!pageContent) {
-        console.error('页面内容为空');
-        return null;
-    }
-    
-    // 尝试使用strencode2解码方法提取
-    if (pageContent.includes('document.write(strencode2("')) {
-        console.log('找到加密的视频信息，使用strencode2方法解析...');
-        try {
-            const encodedPart = pageContent.split("document.write(strencode2(\"")[1]?.split("\"")[0];
-            if (!encodedPart) {
-                console.error('无法找到加密部分');
-                return null;
-            }
-            
-            const jm = strencode2(encodedPart);
-            const videoSrc = jm.split("<source src='")[1]?.split("'")[0];
-            return videoSrc;
-        } catch (error) {
-            console.error(`解析加密内容时出错: ${error.message}`);
-            return null;
-        }
-    }
-    
-    // 尝试直接从页面中查找m3u8链接
-    console.log('尝试直接查找m3u8链接...');
-    const m3u8Pattern = /https?:\/\/[^\s<>"']+?\.m3u8[^\s<>"']*/g;
-    const matches = pageContent.match(m3u8Pattern);
-    
-    if (matches && matches.length > 0) {
-        console.log(`找到 ${matches.length} 个m3u8链接`);
-        return matches[0]; // 返回第一个匹配的链接
-    }
-    
-    return null;
-}
-
-// 主函数
-(async () => {
+// 视频链接提取API
+app.post('/api/extract', async (req, res) => {
     try {
-        // 设置请求头
-        const headers = {
-            'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'accept-language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'cache-control': 'no-store, no-cache, must-revalidate',
-            // 'cookie': '在这里添加你的cookie', // 如果需要，可以添加cookie
-            'referer': 'https://www.91porn.com/index.php',
-            'sec-ch-ua': '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
-            'sec-ch-ua-mobile': '?0',
-            'sec-ch-ua-platform': '"Windows"',
-            'sec-fetch-dest': 'document',
-            'sec-fetch-mode': 'navigate',
-            'sec-fetch-site': 'same-origin',
-            'sec-fetch-user': '?1',
-            'upgrade-insecure-requests': '1',
-            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
-        };
-
-        console.log(`开始获取视频页面内容: ${config.videoUrl}`);
+        // 验证请求参数
+        const { url } = req.body;
         
-        // 直接使用axios实例发送请求
-        const response = await axiosInstance.get(config.videoUrl, { headers });
-        const pageContent = response.data;
-        console.log('成功获取页面内容');
+        if (!url) {
+            return res.status(400).json({
+                status: 'error',
+                message: '缺少必要参数: url'
+            });
+        }
         
-
+        // 验证URL格式
+        if (!url.match(/^https?:\/\/.+/)) {
+            return res.status(400).json({
+                status: 'error',
+                message: 'URL格式不正确'
+            });
+        }
         
-        // 提取视频链接
-        const videoSrc = extractVideoUrl(pageContent);
+        console.log(`接收到提取请求: ${url}`);
         
-        if (videoSrc) {
-            console.log('成功提取视频链接:');
-            console.log(videoSrc);
+        // 调用视频提取函数
+        const result = await getVideoUrl(url, {
+            timeout: config.timeout,
+            useProxy: config.useProxy,
+            proxy: config.proxy,
+            verbose: true
+        });
+        
+        if (result.success) {
+            return res.json({
+                status: 'success',
+                data: {
+                    videoUrl: result.videoUrl
+                }
+            });
         } else {
-            console.log('未能提取视频链接');
+            return res.status(404).json({
+                status: 'error',
+                message: result.error || '未能提取视频链接'
+            });
         }
     } catch (error) {
-        console.error('获取视频链接最终失败:', error.message);
+        console.error('API错误:', error.message);
+        res.status(500).json({
+            status: 'error',
+            message: '服务器内部错误',
+            error: error.message
+        });
     }
-})();
+});
+
+// 启动服务器
+app.listen(PORT, () => {
+    console.log(`服务器已启动，监听端口 ${PORT}`);
+    console.log(`API文档: http://localhost:${PORT}/`);
+});
