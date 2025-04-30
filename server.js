@@ -33,13 +33,12 @@ const videoUrl = 'https://www.91porn.com/view_video.php?viewkey=1566226242';
     // 跳转到视频页面
     await page.goto(videoUrl, { waitUntil: 'networkidle2' });
 
-    // 等待2s
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // 使用Puppeteer内置的等待方法
+    await page.waitForSelector('#player_one');
 
     // 获取页面源码
     const pageContent = await page.content();
     var jm = strencode2(pageContent.split("document.write(strencode2(\"")[1].split("\"")[0]);
-    console.log(pageContent.split("document.write(strencode2(\"")[1].split("\"")[0]) 
     var videoSrc = jm.split("<source src='")[1].split("'")[0];
     if (videoSrc) {
         console.log('视频链接:', videoSrc);
