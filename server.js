@@ -10,14 +10,7 @@ const PORT = process.env.PORT || 3000;
 // 可配置参数
 const config = {
     // 请求超时时间（毫秒）
-    timeout: 30000,
-    // 是否使用代理（如果需要）
-    useProxy: true, // 默认启用代理
-    // 代理配置
-    proxy: {
-        host: '127.0.0.1',
-        port: 7890 // 常见的代理端口，如果使用其他代理软件，请修改为对应端口
-    }
+    timeout: 30000
 };
 
 // 中间件
@@ -56,8 +49,6 @@ app.post('/api/extract', async (req, res) => {
         // 调用视频提取函数
         const result = await getVideoUrl(url, {
             timeout: config.timeout,
-            useProxy: config.useProxy,
-            proxy: config.proxy,
             verbose: true
         });
         
