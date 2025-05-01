@@ -115,8 +115,10 @@ function extractVideoUrl(pageContent, verbose = true) {
  * @returns {Object} - 默认浏览器配置
  */
 function getDefaultBrowserConfig() {
+    const isLinux = process.platform === 'linux';
     return {
         headless: true,
+        ...(isLinux ? { executablePath: '/usr/bin/google-chrome' } : {}),
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
