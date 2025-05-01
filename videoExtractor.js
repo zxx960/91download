@@ -143,18 +143,23 @@ function getDefaultBrowserConfig() {
  * @param {Object} options - 配置选项
  * @param {number} options.timeout - 请求超时时间（毫秒）
  * @param {boolean} options.verbose - 是否输出详细日志
+ * @param {Function} options.onStatusChange - 状态变化回调函数
  * @returns {Promise<{success: boolean, videoUrl: string|null, error: string|null}>} - 包含提取结果的对象
  */
 async function getVideoUrl(videoUrl, options = {}) {
     const {
         timeout = 15000,
-        verbose = true
+        verbose = true,
+        onStatusChange = () => {} // 添加状态回调函数
     } = options;
 
     let browser = null;
     let page = null;
     
     try {
+        // 通知状态变化：开始请求
+        onStatusChange({ isProcessing: true });
+        
         verbose && console.log(`开始获取视频页面内容: ${videoUrl}`);
         
         // 从池中获取浏览器实例
@@ -234,6 +239,8 @@ async function getVideoUrl(videoUrl, options = {}) {
         if (browser) {
             releaseBrowserInstance(browser);
         }
+        // 通知状态变化：请求结束
+        onStatusChange({ isProcessing: false });
     }
 }
 
