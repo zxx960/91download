@@ -1,6 +1,71 @@
 const puppeteer = require('puppeteer');
 const { strencode2 } = require('./m2_node');
 
+// 浏览器池配置
+const BROWSER_POOL = {
+    maxInstances: 1, // 最大实例数改为1
+    idleTimeout: 60000, // 增加空闲超时时间到60秒
+    instances: [], // 浏览器实例池
+    lastUsed: new Map(), // 记录最后使用时间
+};
+
+/**
+ * 获取或创建浏览器实例
+ * @returns {Promise<Object>} - 浏览器实例
+ */
+async function getBrowserInstance() {
+    const now = Date.now();
+    
+    // 清理空闲过期的实例
+    for (let i = BROWSER_POOL.instances.length - 1; i >= 0; i--) {
+        const instance = BROWSER_POOL.instances[i];
+        const lastUsed = BROWSER_POOL.lastUsed.get(instance);
+        if (now - lastUsed > BROWSER_POOL.idleTimeout) {
+            await instance.close();
+            BROWSER_POOL.instances.splice(i, 1);
+            BROWSER_POOL.lastUsed.delete(instance);
+        }
+    }
+    
+    // 查找可用的实例
+    for (const instance of BROWSER_POOL.instances) {
+        if (!BROWSER_POOL.lastUsed.get(instance)) {
+            BROWSER_POOL.lastUsed.set(instance, now);
+            return instance;
+        }
+    }
+    
+    // 如果池未满，创建新实例
+    if (BROWSER_POOL.instances.length < BROWSER_POOL.maxInstances) {
+        const browser = await puppeteer.launch(getDefaultBrowserConfig());
+        BROWSER_POOL.instances.push(browser);
+        BROWSER_POOL.lastUsed.set(browser, now);
+        return browser;
+    }
+    
+    // 如果池已满，等待可用实例
+    return new Promise((resolve) => {
+        const checkInterval = setInterval(async () => {
+            for (const instance of BROWSER_POOL.instances) {
+                if (!BROWSER_POOL.lastUsed.get(instance)) {
+                    clearInterval(checkInterval);
+                    BROWSER_POOL.lastUsed.set(instance, now);
+                    resolve(instance);
+                    return;
+                }
+            }
+        }, 100);
+    });
+}
+
+/**
+ * 释放浏览器实例
+ * @param {Object} browser - 浏览器实例
+ */
+function releaseBrowserInstance(browser) {
+    BROWSER_POOL.lastUsed.set(browser, null);
+}
+
 /**
  * 从HTML内容中提取视频链接
  * @param {string} pageContent - 网页内容
@@ -85,12 +150,14 @@ async function getVideoUrl(videoUrl, options = {}) {
     } = options;
 
     let browser = null;
+    let page = null;
     
     try {
         verbose && console.log(`开始获取视频页面内容: ${videoUrl}`);
         
-        browser = await puppeteer.launch(getDefaultBrowserConfig());
-        const page = await browser.newPage();
+        // 从池中获取浏览器实例
+        browser = await getBrowserInstance();
+        page = await browser.newPage();
         
         // 设置页面超时
         page.setDefaultTimeout(timeout);
@@ -159,8 +226,11 @@ async function getVideoUrl(videoUrl, options = {}) {
             error: error.message
         };
     } finally {
+        if (page) {
+            await page.close();
+        }
         if (browser) {
-            await browser.close();
+            releaseBrowserInstance(browser);
         }
     }
 }
