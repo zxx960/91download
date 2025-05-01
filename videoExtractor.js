@@ -58,7 +58,14 @@ function getDefaultBrowserConfig() {
             '--disable-dev-shm-usage',
             '--disable-accelerated-2d-canvas',
             '--disable-gpu',
-            '--window-size=1920x1080'
+            '--window-size=1920x1080',
+            '--disable-extensions',
+            '--disable-notifications',
+            '--disable-popup-blocking',
+            '--disable-infobars',
+            '--disable-web-security',
+            '--disable-features=IsolateOrigins,site-per-process',
+            '--disable-site-isolation-trials'
         ]
     };
 }
@@ -73,7 +80,7 @@ function getDefaultBrowserConfig() {
  */
 async function getVideoUrl(videoUrl, options = {}) {
     const {
-        timeout = 30000,
+        timeout = 15000,
         verbose = true
     } = options;
 
@@ -82,12 +89,22 @@ async function getVideoUrl(videoUrl, options = {}) {
     try {
         verbose && console.log(`开始获取视频页面内容: ${videoUrl}`);
         
-        // 启动浏览器
         browser = await puppeteer.launch(getDefaultBrowserConfig());
         const page = await browser.newPage();
         
         // 设置页面超时
         page.setDefaultTimeout(timeout);
+        
+        // 设置请求拦截，只加载必要的资源
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            const resourceType = request.resourceType();
+            if (resourceType === 'image' || resourceType === 'stylesheet' || resourceType === 'font') {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
         
         // 设置请求头
         await page.setExtraHTTPHeaders({
@@ -106,9 +123,9 @@ async function getVideoUrl(videoUrl, options = {}) {
             'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
         });
         
-        // 访问页面
+        // 访问页面，使用更快的等待策略
         await page.goto(videoUrl, {
-            waitUntil: 'networkidle0',
+            waitUntil: 'domcontentloaded',
             timeout: timeout
         });
         
@@ -142,7 +159,6 @@ async function getVideoUrl(videoUrl, options = {}) {
             error: error.message
         };
     } finally {
-        // 关闭浏览器
         if (browser) {
             await browser.close();
         }
