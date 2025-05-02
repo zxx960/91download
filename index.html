@@ -143,7 +143,6 @@
         <p class="description">永久免费 · 实时更新 · 一键下载</p>
         <textarea id="videoUrl" placeholder="在此输入视频页面URL..."></textarea>
         <button id="extractButton">提取链接</button>
-        <div id="loading" class="loading">正在处理中...</div>
         <div id="error" class="error"></div>
         <div id="result"></div>
         <div class="footer">
@@ -167,7 +166,6 @@
 
             const videoUrl = document.getElementById('videoUrl').value;
             const resultDiv = document.getElementById('result');
-            const loadingDiv = document.getElementById('loading');
             const errorDiv = document.getElementById('error');
             
             // 清空之前的结果
@@ -184,7 +182,6 @@
             try {
                 isProcessing = true;
                 updateButtonState(); // 更新按钮状态
-                loadingDiv.style.display = 'block';
                 
                 const response = await fetch('/api/extract', {
                     method: 'POST',
@@ -211,7 +208,6 @@
                 errorDiv.textContent = '发生错误：' + error.message;
                 errorDiv.style.display = 'block';
             } finally {
-                loadingDiv.style.display = 'none';
                 isProcessing = false;
                 updateButtonState(); // 更新按钮状态
             }
