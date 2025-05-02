@@ -1,5 +1,5 @@
 const express = require('express');
-const cors = require('cors');
+// const cors = require('cors'); // 移除不需要的cors模块
 const path = require('path');
 const { getVideoUrl } = require('./videoExtractor');
 
@@ -10,12 +10,12 @@ const PORT = process.env.PORT || 3000;
 // 可配置参数
 const config = {
     // 请求超时时间（毫秒）
-    timeout: 30000
+    timeout: 15000 // 减少默认超时时间
 };
 
 // 中间件
 app.use(express.json());
-app.use(cors()); // 启用CORS支持跨域请求
+// 移除CORS配置，因为前后端在同一域名下
 app.use('/', express.static(__dirname)); // 提供静态文件服务
 
 // 首页路由
